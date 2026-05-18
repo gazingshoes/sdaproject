@@ -1,7 +1,7 @@
 """
 data_loader.py
 ==============
-Modul untuk memuat dan memproses dataset CSV.
+Module for loading and processing the CSV dataset.
 """
 
 import csv
@@ -9,10 +9,10 @@ import os
 
 def get_data(filepath: str = "online_gaming_behavior_dataset.csv") -> list:
     """
-    Mengambil kolom PlayerLevel saja sebagai list of integers untuk proses benchmark.
+    Retrieves the PlayerLevel column as a list of integers for the benchmark process.
     """
     if not os.path.exists(filepath):
-        print(f"[ERROR] File {filepath} tidak ditemukan.")
+        print(f"[ERROR] File {filepath} not found.")
         return []
         
     data = []
@@ -20,7 +20,7 @@ def get_data(filepath: str = "online_gaming_behavior_dataset.csv") -> list:
         reader = csv.DictReader(f)
         for row in reader:
             try:
-                # Menggunakan GameDifficulty 'Easy' sebagai filter bawaan untuk benchmark (sesuai main.py)
+                # Using 'Easy' GameDifficulty as the default filter for benchmarks (matching main.py)
                 if row.get("GameDifficulty", "") == "Easy":
                     data.append(int(row["PlayerLevel"]))
             except ValueError:
@@ -29,10 +29,10 @@ def get_data(filepath: str = "online_gaming_behavior_dataset.csv") -> list:
 
 def get_leaderboard_data(filepath: str = "online_gaming_behavior_dataset.csv") -> list:
     """
-    Mengambil data lengkap (ID, Level, dan Difficulty) untuk ditampilkan di GUI Leaderboard.
+    Retrieves the complete data (ID, Level, and Difficulty) to display in the GUI Leaderboard.
     """
     if not os.path.exists(filepath):
-        print(f"[ERROR] File {filepath} tidak ditemukan.")
+        print(f"[ERROR] File {filepath} not found.")
         return []
         
     dataset = []
@@ -42,6 +42,6 @@ def get_leaderboard_data(filepath: str = "online_gaming_behavior_dataset.csv") -
             dataset.append({
                 "PlayerID": row.get("PlayerID", "Unknown"),
                 "PlayerLevel": int(row.get("PlayerLevel", 0)),
-                "Difficulty": row.get("GameDifficulty", "Unknown") # Diganti dari Genre ke Difficulty
+                "Difficulty": row.get("GameDifficulty", "Unknown")
             })
     return dataset

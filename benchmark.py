@@ -1,8 +1,8 @@
 """
 benchmark.py
 ============
-Mengukur dan membandingkan waktu eksekusi serta penggunaan memori 
-algoritma sorting pada berbagai ukuran sampel dari dataset PlayerLevel.
+Measures and compares execution time and memory usage of
+sorting algorithms on various sample sizes from the PlayerLevel dataset.
 """
 
 import time
@@ -10,12 +10,9 @@ import random
 import tracemalloc
 from algorithms import bubble_sort, quick_sort, merge_sort, fast_streaming_sort
 
-
-# Batas atas ukuran data untuk Bubble Sort (O(n²) sangat lambat di atas ini)
-BUBBLE_SORT_MAX_N = 3000
-
+# Max limit removed for Bubble Sort
 ALGO_INFO = {
-    "Bubble Sort"        : {"fn": bubble_sort,         "complexity": "O(n²)",      "max_n": BUBBLE_SORT_MAX_N},
+    "Bubble Sort"        : {"fn": bubble_sort,         "complexity": "O(n²)",      "max_n": None},
     "Quick Sort"         : {"fn": quick_sort,           "complexity": "O(n log n)", "max_n": None},
     "Merge Sort"         : {"fn": merge_sort,           "complexity": "O(n log n)", "max_n": None},
     "Fast Streaming Sort": {"fn": fast_streaming_sort,  "complexity": "O(n)",       "max_n": None},
@@ -26,7 +23,6 @@ def run_benchmark(data: list, sample_sizes: list = None) -> dict:
     n = len(data)
 
     if sample_sizes is None:
-        # Scale up to mirror the paper's claims (testing up to 1,000,000)
         candidates = [10000, 50000, 100000, 500000, 1000000, n]
         sample_sizes = sorted(set(min(s, n) for s in candidates if s <= n or s == candidates[0]))
         if not sample_sizes:
@@ -38,10 +34,10 @@ def run_benchmark(data: list, sample_sizes: list = None) -> dict:
 
     sep = "=" * 85
     print(f"\n{sep}")
-    print(f"  BENCHMARK — Perbandingan Waktu & Memori Sorting")
+    print(f"  BENCHMARK - Sorting Time & Memory Comparison")
     print(f"  Dataset: PlayerLevel, GameDifficulty = Easy")
     print(sep)
-    print(f"  {'Algoritma':<25} {'n':>9}  {'Waktu (detik)':>14}  {'Memori (MB)':>12}  {'Big-O':<12}")
+    print(f"  {'Algorithm':<25} {'n':>9}  {'Time (seconds)':>16}  {'Memory (MB)':>12}  {'Big-O':<12}")
     print(f"  {'-'*85}")
 
     for size in sample_sizes:
@@ -49,14 +45,6 @@ def run_benchmark(data: list, sample_sizes: list = None) -> dict:
         results["sizes"].append(size)
 
         for name, info in ALGO_INFO.items():
-            max_n = info["max_n"]
-
-            if max_n is not None and size > max_n:
-                results[name].append(None)
-                memory_results[name].append(None)
-                print(f"  {name:<25} {size:>9}  {'N/A (terlalu lambat)':>14}  {'N/A':>12}  {info['complexity']}")
-                continue
-
             test_sample = sample.copy()
             
             # Start memory tracking
@@ -76,14 +64,13 @@ def run_benchmark(data: list, sample_sizes: list = None) -> dict:
             results[name].append(round(elapsed, 6))
             memory_results[name].append(round(peak_mb, 4))
             
-            print(f"  {name:<25} {size:>9}  {elapsed:>14.6f}s  {peak_mb:>10.4f} MB  {info['complexity']}")
+            print(f"  {name:<25} {size:>9}  {elapsed:>16.6f}s  {peak_mb:>10.4f} MB  {info['complexity']}")
 
         print(f"  {'-'*85}")
 
     print(sep)
     _print_summary(results, memory_results)
     
-    # Attach memory results cleanly so it doesn't break main.py plotting functions
     for name in ALGO_INFO:
         results[f"{name}_mem"] = memory_results[name]
         
@@ -94,8 +81,8 @@ def _print_summary(results: dict, memory_results: dict) -> None:
     sizes = results["sizes"]
     last  = len(sizes) - 1  
 
-    print("\n  RINGKASAN (pada data terbesar):")
-    print(f"  {'Algoritma':<25} {'Waktu (s)':>12}  {'Peak Memori':>14}  {'Big-O':<12}  {'Stabil':<8}  {'Streaming'}")
+    print("\n  SUMMARY (on largest data):")
+    print(f"  {'Algorithm':<25} {'Time (s)':>12}  {'Peak Memory':>14}  {'Big-O':<12}  {'Stable':<8}  {'Streaming'}")
     print(f"  {'-'*88}")
 
     rows = []
@@ -106,17 +93,16 @@ def _print_summary(results: dict, memory_results: dict) -> None:
         m_str = f"{m:.4f} MB" if m is not None else "N/A"
         rows.append((t if t is not None else float("inf"), m if m is not None else float("inf"), name, t_str, m_str, info["complexity"]))
 
-    stable_map    = {"Bubble Sort": "Ya", "Quick Sort": "Tidak",
-                     "Merge Sort": "Ya", "Fast Streaming Sort": "Ya"}
-    streaming_map = {"Bubble Sort": "Tidak", "Quick Sort": "Tidak",
-                     "Merge Sort": "Tidak", "Fast Streaming Sort": "Ya ✓"}
+    stable_map    = {"Bubble Sort": "Yes", "Quick Sort": "No",
+                     "Merge Sort": "Yes", "Fast Streaming Sort": "Yes"}
+    streaming_map = {"Bubble Sort": "No", "Quick Sort": "No",
+                     "Merge Sort": "No", "Fast Streaming Sort": "Yes"}
 
     rows.sort(key=lambda x: x[0])
     for _, _, name, t_str, m_str, complexity in rows:
         print(f"  {name:<25} {t_str:>12}  {m_str:>14}  {complexity:<12}  "
               f"{stable_map[name]:<8}  {streaming_map[name]}")
 
-    # Calculate winner for Memory
     rows_mem = [r for r in rows if r[1] != float('inf')]
     if rows_mem:
         rows_mem.sort(key=lambda x: x[1])
@@ -125,6 +111,6 @@ def _print_summary(results: dict, memory_results: dict) -> None:
         mem_winner = "N/A"
 
     winner = rows[0][2]
-    print(f"\n  🏆 Tercepat (Waktu)  : {winner}")
-    print(f"  🏆 Paling Hemat RAM : {mem_winner} (This is why it beats external sort!)")
+    print(f"\n  Fastest (Time)     : {winner}")
+    print(f"  Most RAM Efficient : {mem_winner}")
     print("=" * 88)
