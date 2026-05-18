@@ -1,12 +1,14 @@
 """
 visualizer.py
 =============
-Tkinter GUI module for displaying the interactive Leaderboard and
-live time comparison (benchmark) analysis for the four sorting algorithms.
-Includes search functionality and PlayerID deduplication.
+Tkinter GUI module for displaying the interactive Leaderboard.
+Features an aesthetic, tabbed benchmark menu for comparing 
+Execution Time, RAM Usage, and CPU Time independently to reduce app load.
+Responsive layout to prevent cropping on smaller screens.
 """
 
 import time
+import tracemalloc
 import tkinter as tk
 from tkinter import ttk, messagebox
 from data_loader import get_leaderboard_data
@@ -20,85 +22,123 @@ from algorithms.merge_sort import merge_sort
 def launch_leaderboard(dataset_path: str):
     root = tk.Tk()
     root.title("Sorting Algorithm Analysis & Leaderboard")
-    root.geometry("950x750")
-    root.configure(padx=20, pady=20)
+    
+    root.geometry("950x700")
+    root.minsize(800, 600)
+    root.configure(padx=20, pady=20, bg="#f4f6f9")
 
-    # Header / Title
-    lbl_title = tk.Label(root, text="Algorithmic Leaderboard & Benchmark", font=("Helvetica", 18, "bold"))
-    lbl_title.pack(pady=(0, 5))
+    # --- STYLING ---
+    style = ttk.Style()
+    style.theme_use("clam")
+    
+    style.configure("Treeview", font=("Segoe UI", 10), rowheight=25, background="#ffffff", fieldbackground="#ffffff")
+    style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"), background="#e2e8f0", foreground="#1e293b", padding=4)
+    style.configure("TNotebook.Tab", font=("Segoe UI", 10, "bold"), padding=[12, 6])
+    style.configure("TNotebook", background="#f4f6f9")
 
-    lbl_subtitle = tk.Label(root, text="Compare execution times live on Player Level data", font=("Helvetica", 11, "italic"))
-    lbl_subtitle.pack(pady=(0, 20))
+    # --- 1. HEADER (Top) ---
+    header_frame = tk.Frame(root, bg="#f4f6f9")
+    header_frame.pack(fill="x", pady=(0, 10))
 
-    # Top Frame (For Filter & Search)
-    top_frame = tk.Frame(root)
+    lbl_title = tk.Label(header_frame, text="Algorithmic Leaderboard & Benchmark", font=("Segoe UI", 18, "bold"), bg="#f4f6f9", fg="#0f172a")
+    lbl_title.pack(pady=(0, 2))
+
+    lbl_subtitle = tk.Label(header_frame, text="Compare time, memory, and CPU efficiency independently", font=("Segoe UI", 10, "italic"), bg="#f4f6f9", fg="#475569")
+    lbl_subtitle.pack()
+
+    # --- 2. FILTERS & SEARCH (Top) ---
+    top_frame = tk.Frame(root, bg="#f4f6f9")
     top_frame.pack(fill="x", pady=(0, 10))
 
-    # --- DIFFICULTY FILTER ---
-    lbl_filter = tk.Label(top_frame, text="Difficulty:", font=("Helvetica", 11, "bold"))
+    lbl_filter = tk.Label(top_frame, text="Difficulty:", font=("Segoe UI", 11, "bold"), bg="#f4f6f9", fg="#334155")
     lbl_filter.pack(side="left", padx=(0, 5))
 
     difficulties = ["All", "Easy", "Medium", "Hard"]
-    combo_filter = ttk.Combobox(top_frame, values=difficulties, state="readonly", font=("Helvetica", 11), width=10)
+    combo_filter = ttk.Combobox(top_frame, values=difficulties, state="readonly", font=("Segoe UI", 11), width=10)
     combo_filter.current(0)
     combo_filter.pack(side="left", padx=(0, 20))
 
-    # --- SEARCH SECTION ---
-    lbl_search = tk.Label(top_frame, text="Search Player ID:", font=("Helvetica", 11, "bold"))
+    lbl_search = tk.Label(top_frame, text="Search ID:", font=("Segoe UI", 11, "bold"), bg="#f4f6f9", fg="#334155")
     lbl_search.pack(side="left", padx=(0, 5))
 
-    entry_search = ttk.Entry(top_frame, font=("Helvetica", 11), width=15)
-    entry_search.pack(side="left", padx=(0, 5))
+    entry_search = ttk.Entry(top_frame, font=("Segoe UI", 11), width=15)
+    entry_search.pack(side="left", padx=(0, 10))
 
-    btn_search = tk.Button(top_frame, text="Search", bg="#2196F3", fg="white", font=("Helvetica", 9, "bold"), command=lambda: update_table())
+    btn_search = tk.Button(top_frame, text="Search", bg="#3b82f6", fg="white", font=("Segoe UI", 9, "bold"), relief="flat", padx=12, pady=2, command=lambda: update_table())
     btn_search.pack(side="left")
 
-    # Data Count Indicator
-    lbl_count = tk.Label(top_frame, text="Showing: 0 players", font=("Helvetica", 10))
+    lbl_count = tk.Label(top_frame, text="Showing: 0 players", font=("Segoe UI", 10), bg="#f4f6f9", fg="#64748b")
     lbl_count.pack(side="right")
 
-    # --- LEADERBOARD TABLE ---
-    table_frame = tk.Frame(root)
-    table_frame.pack(fill="both", expand=True, pady=(0, 15))
+    # --- 3. BENCHMARK PANEL (Bottom) ---
+    bench_container = tk.Frame(root, bg="#f4f6f9")
+    bench_container.pack(fill="x", side="bottom", pady=(10, 0))
+
+    notebook = ttk.Notebook(bench_container)
+    notebook.pack(fill="x")
+
+    tab_time = tk.Frame(notebook, bg="white", padx=15, pady=15)
+    tab_ram = tk.Frame(notebook, bg="white", padx=15, pady=15)
+    tab_cpu = tk.Frame(notebook, bg="white", padx=15, pady=15)
+
+    notebook.add(tab_time, text="Execution Time (Wall Clock)")
+    notebook.add(tab_ram, text="Peak RAM Usage")
+    notebook.add(tab_cpu, text="CPU Processing Time")
+
+    # Independent Run Buttons for each tab
+    btn_run_time = tk.Button(tab_time, text="Measure Execution Time", font=("Segoe UI", 10, "bold"), bg="#3b82f6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("time"))
+    btn_run_time.pack(anchor="w", pady=(0, 10))
+
+    btn_run_ram = tk.Button(tab_ram, text="Measure Peak RAM", font=("Segoe UI", 10, "bold"), bg="#8b5cf6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("ram"))
+    btn_run_ram.pack(anchor="w", pady=(0, 10))
+
+    btn_run_cpu = tk.Button(tab_cpu, text="Measure CPU Processing Time", font=("Segoe UI", 10, "bold"), bg="#f59e0b", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("cpu"))
+    btn_run_cpu.pack(anchor="w", pady=(0, 10))
+
+    res_font = ("Consolas", 11)
+    
+    def create_labels(parent):
+        labels = {}
+        labels['fss'] = tk.Label(parent, text="Fast Streaming Sort (O(n))    : Waiting...", font=res_font, bg="white")
+        labels['fss'].pack(anchor="w", pady=1)
+        
+        labels['merge'] = tk.Label(parent, text="Merge Sort (O(n log n))       : Waiting...", font=res_font, bg="white")
+        labels['merge'].pack(anchor="w", pady=1)
+        
+        labels['quick'] = tk.Label(parent, text="Quick Sort (O(n log n))       : Waiting...", font=res_font, bg="white")
+        labels['quick'].pack(anchor="w", pady=1)
+        
+        labels['bubble'] = tk.Label(parent, text="Bubble Sort (O(n²))           : Waiting...", font=res_font, bg="white")
+        labels['bubble'].pack(anchor="w", pady=1)
+        return labels
+
+    lbls_time = create_labels(tab_time)
+    lbls_ram = create_labels(tab_ram)
+    lbls_cpu = create_labels(tab_cpu)
+
+    # --- 4. TABLE / LEADERBOARD (Middle / Expands) ---
+    table_frame = tk.Frame(root, bg="white", bd=1, relief="solid")
+    table_frame.pack(fill="both", expand=True)
 
     columns = ("Rank", "PlayerID", "PlayerLevel", "Difficulty")
-    tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15)
+    tree = ttk.Treeview(table_frame, columns=columns, show="headings")
     
     tree.heading("Rank", text="Rank")
     tree.heading("PlayerID", text="Player ID")
     tree.heading("PlayerLevel", text="Player Level")
     tree.heading("Difficulty", text="Difficulty")
 
-    tree.column("Rank", width=80, anchor="center")
+    tree.column("Rank", width=60, anchor="center")
     tree.column("PlayerID", width=200, anchor="center")
-    tree.column("PlayerLevel", width=150, anchor="center")
-    tree.column("Difficulty", width=150, anchor="center")
+    tree.column("PlayerLevel", width=120, anchor="center")
+    tree.column("Difficulty", width=120, anchor="center")
 
-    tree.pack(fill="both", expand=True, side="left")
+    tree.pack(fill="both", expand=True, side="left", padx=1, pady=1)
 
     scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side="right", fill="y")
 
-    # --- BENCHMARK PANEL ---
-    bench_frame = tk.LabelFrame(root, text="Live Benchmark Comparison (Execution Time)", font=("Helvetica", 12, "bold"), padx=15, pady=10)
-    bench_frame.pack(fill="x", side="bottom")
-
-    btn_benchmark = tk.Button(bench_frame, text="Run Benchmark on Current Data", font=("Helvetica", 10, "bold"), bg="#4CAF50", fg="white", command=lambda: run_live_benchmark())
-    btn_benchmark.pack(anchor="w", pady=(0, 10))
-
-    res_font = ("Courier", 11)
-    lbl_res_fss = tk.Label(bench_frame, text="Fast Streaming Sort (O(n))    : Waiting...", font=res_font)
-    lbl_res_fss.pack(anchor="w")
-    
-    lbl_res_merge = tk.Label(bench_frame, text="Merge Sort (O(n log n))       : Waiting...", font=res_font)
-    lbl_res_merge.pack(anchor="w")
-
-    lbl_res_quick = tk.Label(bench_frame, text="Quick Sort (O(n log n))       : Waiting...", font=res_font)
-    lbl_res_quick.pack(anchor="w")
-
-    lbl_res_bubble = tk.Label(bench_frame, text="Bubble Sort (O(n²))           : Waiting...", font=res_font)
-    lbl_res_bubble.pack(anchor="w")
 
     # --- LOGIC & DATA HANDLING ---
     try:
@@ -119,13 +159,10 @@ def launch_leaderboard(dataset_path: str):
         selected_diff = combo_filter.get()
         search_query = entry_search.get().strip().lower()
         
-        # 1. Filter by Difficulty
         filtered_data = raw_data
         if selected_diff != "All":
             filtered_data = [d for d in raw_data if d["Difficulty"].lower() == selected_diff.lower()]
             
-        # 2. PlayerID Deduplication (Prevent Cross-Difficulty Overlaps)
-        # Keep the data with the highest PlayerLevel
         dedup_map = {}
         for d in filtered_data:
             pid = d["PlayerID"]
@@ -133,21 +170,16 @@ def launch_leaderboard(dataset_path: str):
                 dedup_map[pid] = d
         filtered_data = list(dedup_map.values())
 
-        # 3. Filter by Search Query
         if search_query:
             filtered_data = [d for d in filtered_data if search_query in str(d["PlayerID"]).lower()]
 
         filtered_data_global = filtered_data
-
-        if not filtered_data:
-            lbl_count.config(text="Showing: 0 players")
-            return
-
         lbl_count.config(text=f"Showing: {len(filtered_data):,} players")
 
+        if not filtered_data:
+            return
+
         levels = [d["PlayerLevel"] for d in filtered_data]
-        
-        # Populate table using the fastest sort (FSS)
         sorted_levels = fast_streaming_sort(levels, memory_ratio=0.50)
         sorted_levels.reverse()
 
@@ -165,63 +197,93 @@ def launch_leaderboard(dataset_path: str):
 
         for idx, row in enumerate(sorted_data):
             tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
-            tree.insert("", "end", values=(
-                idx + 1, row["PlayerID"], row["PlayerLevel"], row["Difficulty"]
-            ), tags=(tag,))
+            tree.insert("", "end", values=(idx + 1, row["PlayerID"], row["PlayerLevel"], row["Difficulty"]), tags=(tag,))
 
-        # Reset benchmark labels
-        lbl_res_fss.config(text="Fast Streaming Sort (O(n))    : Click the button to process...", fg="black")
-        lbl_res_merge.config(text="Merge Sort (O(n log n))       : Click the button to process...", fg="black")
-        lbl_res_quick.config(text="Quick Sort (O(n log n))       : Click the button to process...", fg="black")
-        lbl_res_bubble.config(text="Bubble Sort (O(n²))           : Click the button to process...", fg="black")
+        # Reset labels
+        for labels in [lbls_time, lbls_ram, lbls_cpu]:
+            for key in labels:
+                base_text = labels[key].cget("text").split(":")[0]
+                labels[key].config(text=f"{base_text}: Click the button above to process...", fg="#475569")
 
-    def run_live_benchmark():
+    def measure_algorithm(name, algo_fn, levels, color, metric, is_bubble=False):
+        try:
+            prefix = name.split("(")[0].strip()
+            
+            # The Critical Fix: We must RETURN to stop the heavy sorting calculation, not just pass.
+            if is_bubble and len(levels) > 3000:
+                skip_msg = f"{name:<30}: N/A (>3000 items, too slow)"
+                if metric == "time":
+                    lbls_time[prefix].config(text=skip_msg, fg="#ef4444")
+                elif metric == "ram":
+                    lbls_ram[prefix].config(text=skip_msg, fg="#ef4444")
+                elif metric == "cpu":
+                    lbls_cpu[prefix].config(text=skip_msg, fg="#ef4444")
+                return 
+
+            # Run only the specific metric requested to eliminate overhead
+            if metric == "time":
+                start_wall = time.perf_counter()
+                algo_fn(levels.copy())
+                wall_time = time.perf_counter() - start_wall
+                lbls_time[prefix].config(text=f"{name:<30}: {wall_time:.6f} seconds", fg=color)
+                
+            elif metric == "ram":
+                tracemalloc.start()
+                algo_fn(levels.copy())
+                _, peak_mem = tracemalloc.get_traced_memory()
+                tracemalloc.stop()
+                peak_mb = peak_mem / (1024 * 1024)
+                lbls_ram[prefix].config(text=f"{name:<30}: {peak_mb:.4f} MB", fg=color)
+                
+            elif metric == "cpu":
+                start_cpu = time.process_time()
+                algo_fn(levels.copy())
+                cpu_time = time.process_time() - start_cpu
+                lbls_cpu[prefix].config(text=f"{name:<30}: {cpu_time:.6f} seconds", fg=color)
+            
+        except Exception as e:
+            print(f"Error in {name}: {e}")
+
+    def run_specific_benchmark(metric):
         if not filtered_data_global:
             messagebox.showwarning("Empty", "No data to benchmark.")
             return
             
         levels = [d["PlayerLevel"] for d in filtered_data_global]
 
-        btn_benchmark.config(text="Processing...", state="disabled")
+        # Disable the specific button being pressed
+        if metric == "time":
+            btn_run_time.config(text="Processing...", bg="#94a3b8", state="disabled")
+        elif metric == "ram":
+            btn_run_ram.config(text="Processing...", bg="#94a3b8", state="disabled")
+        elif metric == "cpu":
+            btn_run_cpu.config(text="Processing...", bg="#94a3b8", state="disabled")
         root.update()
 
         try:
-            # 1. Fast Streaming Sort
-            start = time.perf_counter()
-            fast_streaming_sort(levels.copy(), 0.50)
-            fss_time = time.perf_counter() - start
-            lbl_res_fss.config(text=f"Fast Streaming Sort (O(n))    : {fss_time:.6f} seconds", fg="#2E7D32")
+            measure_algorithm("fss", lambda data: fast_streaming_sort(data, 0.50), levels, "#16a34a", metric)
             root.update()
-
-            # 2. Merge Sort
-            start = time.perf_counter()
-            merge_sort(levels.copy())
-            merge_time = time.perf_counter() - start
-            lbl_res_merge.config(text=f"Merge Sort (O(n log n))       : {merge_time:.6f} seconds", fg="#1565C0")
+            
+            measure_algorithm("merge", merge_sort, levels, "#2563eb", metric)
             root.update()
-
-            # 3. Quick Sort
-            start = time.perf_counter()
-            quick_sort(levels.copy())
-            quick_time = time.perf_counter() - start
-            lbl_res_quick.config(text=f"Quick Sort (O(n log n))       : {quick_time:.6f} seconds", fg="#E65100")
+            
+            measure_algorithm("quick", quick_sort, levels, "#ea580c", metric)
             root.update()
+            
+            measure_algorithm("bubble", bubble_sort, levels, "#dc2626", metric, is_bubble=True)
 
-            # 4. Bubble Sort (No limits applied)
-            start = time.perf_counter()
-            bubble_sort(levels.copy())
-            bubble_time = time.perf_counter() - start
-            lbl_res_bubble.config(text=f"Bubble Sort (O(n²))           : {bubble_time:.6f} seconds", fg="#C62828")
-
-        except Exception as e:
-            messagebox.showerror("Benchmark Error", f"An error occurred during the benchmark: {e}")
         finally:
-            btn_benchmark.config(text="Run Benchmark on Current Data", state="normal")
+            # Re-enable the button
+            if metric == "time":
+                btn_run_time.config(text="Measure Execution Time Only", bg="#3b82f6", state="normal")
+            elif metric == "ram":
+                btn_run_ram.config(text="Measure Peak RAM Only", bg="#8b5cf6", state="normal")
+            elif metric == "cpu":
+                btn_run_cpu.config(text="Measure CPU Processing Time Only", bg="#f59e0b", state="normal")
 
-    tree.tag_configure('evenrow', background='#f9f9f9')
+    tree.tag_configure('evenrow', background='#f8fafc')
     tree.tag_configure('oddrow', background='#ffffff')
     
-    # Bind filter and search events
     combo_filter.bind("<<ComboboxSelected>>", update_table)
     entry_search.bind("<Return>", update_table)
     
