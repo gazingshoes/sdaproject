@@ -336,7 +336,7 @@ def fast_streaming_sort(arr: list, memory_ratio: float = 0.50) -> list:
         return []
 
     if memory_ratio < 0.35:
-        print("[WARNING] memory_ratio < 0.35 → diset ke 0.35 (batas minimum paper).")
+        print("[WARNING] memory_ratio < 0.35 → set to 0.35 (minimum limit according to paper).")
         memory_ratio = 0.35
 
     n = len(arr)
