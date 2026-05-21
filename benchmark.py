@@ -1,10 +1,3 @@
-"""
-benchmark.py
-============
-Measures and compares execution time, memory usage, and CPU processing time
-of sorting algorithms on various sample sizes from the PlayerLevel dataset.
-"""
-
 import time
 import random
 import tracemalloc

@@ -1,9 +1,3 @@
-"""
-verifier.py
-===========
-Utility script to verify all necessary files exist before running.
-"""
-
 import os
 
 def verify_files():

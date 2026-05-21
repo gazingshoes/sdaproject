@@ -1,12 +1,3 @@
-"""
-visualizer.py
-=============
-Tkinter GUI module for displaying the interactive Leaderboard.
-Features an aesthetic, tabbed benchmark menu for comparing 
-Execution Time, RAM Usage, and CPU Time independently to reduce app load.
-Responsive layout to prevent cropping on smaller screens.
-"""
-
 import time
 import tracemalloc
 import tkinter as tk
@@ -32,7 +23,7 @@ def launch_leaderboard(dataset_path: str):
     style.theme_use("clam")
     
     style.configure("Treeview", font=("Segoe UI", 10), rowheight=25, background="#ffffff", fieldbackground="#ffffff")
-    style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"), background="#e2e8f0", foreground="#1e293b", padding=4)
+    style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"), background="#ffffff", foreground="#1e293b", padding=4)
     style.configure("TNotebook.Tab", font=("Segoe UI", 10, "bold"), padding=[12, 6])
     style.configure("TNotebook", background="#f4f6f9")
 
@@ -43,7 +34,7 @@ def launch_leaderboard(dataset_path: str):
     lbl_title = tk.Label(header_frame, text="Algorithmic Leaderboard & Benchmark", font=("Segoe UI", 18, "bold"), bg="#f4f6f9", fg="#0f172a")
     lbl_title.pack(pady=(0, 2))
 
-    lbl_subtitle = tk.Label(header_frame, text="Compare time, memory, and CPU efficiency independently", font=("Segoe UI", 10, "italic"), bg="#f4f6f9", fg="#475569")
+    lbl_subtitle = tk.Label(header_frame, text="", font=("Segoe UI", 10, "italic"), bg="#f4f6f9", fg="#475569")
     lbl_subtitle.pack()
 
     # --- 2. FILTERS & SEARCH (Top) ---
@@ -89,10 +80,10 @@ def launch_leaderboard(dataset_path: str):
     btn_run_time = tk.Button(tab_time, text="Measure Execution Time", font=("Segoe UI", 10, "bold"), bg="#3b82f6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("time"))
     btn_run_time.pack(anchor="w", pady=(0, 10))
 
-    btn_run_ram = tk.Button(tab_ram, text="Measure Peak RAM", font=("Segoe UI", 10, "bold"), bg="#8b5cf6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("ram"))
+    btn_run_ram = tk.Button(tab_ram, text="Measure Peak RAM", font=("Segoe UI", 10, "bold"), bg="#3b82f6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("ram"))
     btn_run_ram.pack(anchor="w", pady=(0, 10))
 
-    btn_run_cpu = tk.Button(tab_cpu, text="Measure CPU Processing Time", font=("Segoe UI", 10, "bold"), bg="#f59e0b", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("cpu"))
+    btn_run_cpu = tk.Button(tab_cpu, text="Measure CPU Processing Time", font=("Segoe UI", 10, "bold"), bg="#3b82f6", fg="white", relief="flat", padx=15, pady=4, command=lambda: run_specific_benchmark("cpu"))
     btn_run_cpu.pack(anchor="w", pady=(0, 10))
 
     res_font = ("Consolas", 11)
@@ -277,9 +268,9 @@ def launch_leaderboard(dataset_path: str):
             if metric == "time":
                 btn_run_time.config(text="Measure Execution Time Only", bg="#3b82f6", state="normal")
             elif metric == "ram":
-                btn_run_ram.config(text="Measure Peak RAM Only", bg="#8b5cf6", state="normal")
+                btn_run_ram.config(text="Measure Peak RAM Only", bg="#3b82f6", state="normal")
             elif metric == "cpu":
-                btn_run_cpu.config(text="Measure CPU Processing Time Only", bg="#f59e0b", state="normal")
+                btn_run_cpu.config(text="Measure CPU Processing Time Only", bg="#3b82f6", state="normal")
 
     tree.tag_configure('evenrow', background='#f8fafc')
     tree.tag_configure('oddrow', background='#ffffff')

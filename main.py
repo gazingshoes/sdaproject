@@ -1,9 +1,3 @@
-"""
-main.py
-=======
-Main entry point for the Sorting Algorithm Analysis project.
-"""
-
 import sys
 from data_loader import get_data
 from benchmark import run_benchmark

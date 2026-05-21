@@ -1,9 +1,3 @@
-"""
-data_loader.py
-==============
-Module for loading and processing the CSV dataset.
-"""
-
 import csv
 import os
 
