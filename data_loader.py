@@ -14,7 +14,7 @@ def get_data(filepath: str = "online_gaming_behavior_dataset.csv") -> list:
         reader = csv.DictReader(f)
         for row in reader:
             try:
-                # Using 'Easy' GameDifficulty as the default filter for benchmarks (matching main.py)
+                # easy difficulty as default for CLI
                 if row.get("GameDifficulty", "") == "Easy":
                     data.append(int(row["PlayerLevel"]))
             except ValueError:

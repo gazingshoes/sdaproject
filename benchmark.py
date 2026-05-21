@@ -5,10 +5,10 @@ import sys
 from algorithms import bubble_sort, quick_sort, merge_sort, fast_streaming_sort
 
 ALGO_INFO = {
-    "Fast Streaming Sort": {"fn": fast_streaming_sort,  "complexity": "O(n)"},
-    "Quick Sort"         : {"fn": quick_sort,           "complexity": "O(n log n)"},
-    "Merge Sort"         : {"fn": merge_sort,           "complexity": "O(n log n)"},
-    "Bubble Sort"        : {"fn": bubble_sort,          "complexity": "O(n²)"},
+    "Fast Streaming Sort": {"fn": fast_streaming_sort,  "complexity": "O(n)",       "max_n": None},
+    "Quick Sort"         : {"fn": quick_sort,           "complexity": "O(n log n)", "max_n": None},
+    "Merge Sort"         : {"fn": merge_sort,           "complexity": "O(n log n)", "max_n": None},
+    "Bubble Sort"        : {"fn": bubble_sort,          "complexity": "O(n²)",      "max_n": None},
 }
 
 def run_benchmark(data: list, sample_sizes: list = None) -> dict:
@@ -41,6 +41,16 @@ def run_benchmark(data: list, sample_sizes: list = None) -> dict:
         results["sizes"].append(size)
 
         for name, info in ALGO_INFO.items():
+            max_n = info.get("max_n")
+            
+            # The Safety Valve: Skip if data is too large for Bubble Sort
+            if max_n is not None and size > max_n:
+                print(f"  {name:<22} {size:>9}  {'N/A (>3000, too slow)':>15}  {'N/A':>15}  {'N/A':>14}  {info['complexity']}")
+                results[name]["wall"].append(None)
+                results[name]["cpu"].append(None)
+                results[name]["mem"].append(None)
+                continue
+
             test_sample = sample.copy()
             
             print(f"  [>] Running {name} on n={size}...", end="", flush=True)
