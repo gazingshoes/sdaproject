@@ -233,7 +233,7 @@ def launch_leaderboard(dataset_path: str):
         try:
             prefix = name.split("(")[0].strip()
             
-            # The Critical Fix: We must RETURN to stop the heavy sorting calculation, not just pass.
+            # fix for bubble sort
             if is_bubble and len(levels) > 3000:
                 skip_msg = f"{name:<30}: N/A (>3000 items, too slow)"
                 if metric == "time":
@@ -244,7 +244,7 @@ def launch_leaderboard(dataset_path: str):
                     lbls_cpu[prefix].config(text=skip_msg, fg="#ef4444")
                 return 
 
-            # Run only the specific metric requested to eliminate overhead
+            # only specific metric requested
             if metric == "time":
                 start_wall = time.perf_counter()
                 algo_fn(levels.copy())
