@@ -23,10 +23,43 @@ def launch_leaderboard(dataset_path: str):
     style.theme_use("clam")
     
     style.configure("Treeview", font=("Segoe UI", 10), rowheight=25, background="#ffffff", fieldbackground="#ffffff")
-    style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"), background="#ffffff", foreground="#1e293b", padding=4)
-    style.configure("TNotebook.Tab", font=("Segoe UI", 10, "bold"), padding=[12, 6])
-    style.configure("TNotebook", background="#f4f6f9")
+    style.configure("Treeview.Heading", font=("Segoe UI", 11, "bold"), background="#cbd5e1", foreground="#1e293b", padding=4)
+    # Set the default background color for the unselected (inactive) tabs
+    style.configure("TNotebook.Tab", 
+                    font=("Segoe UI", 10, "bold"), 
+                    padding=[12, 6], 
+                    background="#e2e8f0")
 
+    style.map("TNotebook.Tab",
+        background=[("selected", "#ffffff"), ("active", "#cbd5e1")],
+        foreground=[("selected", "#3b82f6")]
+    )
+    style.configure("TNotebook", background="#ffffff")
+
+    # --- 1. COMBOBOX (Difficulty Changer) STYLING ---
+    style.configure("TCombobox", 
+                    fieldbackground="#ffffff", # The white text box area
+                    background="#bfdbfe",      # The button area with the arrow
+                    arrowcolor="#1e293b",      # The color of the arrow icon itself
+                    bordercolor="#cbd5e1")     # The border around the box
+    
+    # This prevents the text box from turning gray when you click it
+    style.map("TCombobox",
+              fieldbackground=[("readonly", "#ffffff")],
+              selectbackground=[("readonly", "#ffffff")],
+              selectforeground=[("readonly", "#0f172a")])
+
+    # --- 2. SCROLLBAR STYLING ---
+    style.configure("TScrollbar",
+                    background="#bfdbfe",      # The movable slider (thumb) color
+                    troughcolor="#f8fafc",     # The track color behind the slider
+                    bordercolor="#cbd5e1",     # The border color
+                    arrowcolor="#1e293b")      # The up/down arrow colors
+    
+    # Optional: Change the scrollbar slider color when you hover or click it
+    style.map("TScrollbar",
+              background=[('active', '#93c5fd'), ('pressed', '#60a5fa')])
+    
     # --- 1. HEADER (Top) ---
     header_frame = tk.Frame(root, bg="#f4f6f9")
     header_frame.pack(fill="x", pady=(0, 10))
@@ -108,7 +141,7 @@ def launch_leaderboard(dataset_path: str):
     lbls_cpu = create_labels(tab_cpu)
 
     # --- 4. TABLE / LEADERBOARD (Middle / Expands) ---
-    table_frame = tk.Frame(root, bg="white", bd=1, relief="solid")
+    table_frame = tk.Frame(root, bg="white", highlightbackground="#bfdbfe", highlightcolor="#bfdbfe", highlightthickness=1, bd=0)
     table_frame.pack(fill="both", expand=True)
 
     columns = ("Rank", "PlayerID", "PlayerLevel", "Difficulty")
